@@ -30,7 +30,7 @@ namespace Pinetime::Applications::Screens {
     overlay = lv_obj_create(parent, nullptr);
     lv_obj_set_size(overlay, LV_HOR_RES, LV_VER_RES);
     lv_obj_set_style_local_bg_color(overlay, LV_OBJ_PART_MAIN, LV_STATE_DEFAULT, LV_COLOR_BLACK);
-    lv_obj_set_style_local_bg_opa(overlay, LV_OBJ_PART_MAIN, LV_STATE_DEFAULT, LV_OPA_70); // Semi-transparent
+    lv_obj_set_style_local_bg_opa(overlay, LV_OBJ_PART_MAIN, LV_STATE_DEFAULT, LV_OPA_60); // Semi-transparent
     lv_obj_set_hidden(overlay, true); // Hide the overlay initially
 
     for (int row = 0; row < GRID_ROWS; ++row) {
@@ -82,6 +82,7 @@ namespace Pinetime::Applications::Screens {
                 InitializeBoard();
                 Refresh();
                 lv_obj_set_hidden(overlay, true); // Hide the overlay
+                lv_obj_del(label);
             return true;
             }
 
