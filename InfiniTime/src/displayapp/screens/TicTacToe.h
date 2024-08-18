@@ -37,9 +37,8 @@ namespace Pinetime {
                 
                 char currentPlayer;
                 
-                lv_obj_t* overlay; 
-                
-                lv_obj_t* label; 
+                lv_obj_t* overlay;  
+                lv_obj_t* overlayLabel;
 
                 bool gameOver; // Add this member variable to track game state
                 std::array<std::array<char, 3>, 3> board;

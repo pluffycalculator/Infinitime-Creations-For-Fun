@@ -21,6 +21,7 @@ namespace Pinetime::Applications::Screens {
       filesystem(filesystem),
       currentPlayer('X'),
       overlay(nullptr),
+      overlayLabel(nullptr),
       gameOver(false) {
     InitializeBoard();
 
@@ -59,7 +60,10 @@ namespace Pinetime::Applications::Screens {
             }
         }
     }
-
+  if (overlayLabel) {
+        lv_obj_del(overlayLabel);
+        overlayLabel = nullptr;
+    }
     if (overlay) {
         lv_obj_del(overlay);
     }
@@ -82,7 +86,6 @@ namespace Pinetime::Applications::Screens {
                 InitializeBoard();
                 Refresh();
                 lv_obj_set_hidden(overlay, true); // Hide the overlay
-                lv_obj_del(label);
             return true;
             }
 
@@ -175,16 +178,22 @@ namespace Pinetime::Applications::Screens {
     lv_obj_set_hidden(overlay, false); // Show the overlay
     lv_obj_move_foreground(overlay);   // Ensure overlay is in front of other elements
 
-    lv_obj_t* label = lv_label_create(overlay, nullptr); // Create the label on the overlay
-    lv_label_set_text_fmt(label, "%c Won!", winner);
-    lv_obj_align(label, nullptr, LV_ALIGN_CENTER, 0, 0);
-    lv_obj_set_style_local_text_color(label, LV_LABEL_PART_MAIN, LV_STATE_DEFAULT, LV_COLOR_WHITE);
-    lv_obj_set_style_local_text_font(label, LV_LABEL_PART_MAIN, LV_STATE_DEFAULT, &jetbrains_mono_bold_20);
+    if (!overlayLabel) {
+        // If the label doesn't exist, create it
+        overlayLabel = lv_label_create(overlay, nullptr);
+        lv_obj_set_style_local_text_color(overlayLabel, LV_LABEL_PART_MAIN, LV_STATE_DEFAULT, LV_COLOR_WHITE);
+        lv_obj_set_style_local_text_font(overlayLabel, LV_LABEL_PART_MAIN, LV_STATE_DEFAULT, &jetbrains_mono_bold_20);
+    }
 
-    lv_obj_move_foreground(label);  // Move the label in front of the overlay
+    // Update the label text
+    lv_label_set_text_fmt(overlayLabel, "%c Won!", winner);
+    lv_obj_align(overlayLabel, nullptr, LV_ALIGN_CENTER, 0, 0);
+
+    lv_obj_move_foreground(overlayLabel);  // Move the label in front of the overlay
 
     gameOver = true; // Mark the game as over
 }
+
 
 
 
