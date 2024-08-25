@@ -30,6 +30,7 @@ namespace Pinetime {
       Dice,
       TapCounter,
       TicTacToe,
+      Snake,
       Weather,
       PassKey,
       QuickSettings,

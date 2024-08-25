@@ -394,6 +394,7 @@ list(APPEND SOURCE_FILES
         displayapp/screens/Dice.cpp
         displayapp/screens/TapCounter.cpp
         displayapp/screens/TicTacToe.cpp
+        displayapp/screens/Snake.cpp
         displayapp/screens/PassKey.cpp
         displayapp/screens/Error.cpp
         displayapp/screens/Alarm.cpp
@@ -615,6 +616,7 @@ set(INCLUDE_FILES
         displayapp/screens/Dice.h
         displayapp/screens/TapCounter.h
         displayapp/screens/TicTacToe.h
+        displayapp/screens/Snake.h
         displayapp/screens/Alarm.h
         displayapp/Colors.h
         displayapp/widgets/Counter.h

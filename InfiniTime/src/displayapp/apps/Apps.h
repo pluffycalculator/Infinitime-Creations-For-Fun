@@ -30,6 +30,7 @@ namespace Pinetime {
       Dice,
       TapCounter,
       TicTacToe,
+      Snake,
       Weather,
       PassKey,
       QuickSettings,
@@ -68,7 +69,7 @@ namespace Pinetime {
       static constexpr size_t Count = sizeof...(As);
     };
 
-    using UserAppTypes = TypeList<Apps::StopWatch,Apps::Timer,Apps::Steps,Apps::HeartRate,Apps::Music,Apps::Paint,Apps::Paddle,Apps::Twos,Apps::Dice,Apps::Metronome,Apps::TapCounter>;
+    using UserAppTypes = TypeList<Apps::StopWatch,Apps::Timer,Apps::Steps,Apps::HeartRate,Apps::Music,Apps::Paint,Apps::Paddle,Apps::Twos,Apps::Dice,Apps::Metronome,Apps::TapCounter,Apps::Snake>;
 
     template <WatchFace... Ws>
     struct WatchFaceTypeList {
