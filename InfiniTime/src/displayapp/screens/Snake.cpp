@@ -11,7 +11,7 @@ void snakeMoveTask(lv_task_t* task) {
     snake->moveSnake(); // Call the member function
 }
 
-Snake::Snake() {
+Snake::Snake() : currentInterval(1000) {
 
 struct colorPair {
     lv_color_t bg;
@@ -21,7 +21,7 @@ struct colorPair {
   static constexpr colorPair colors[nColors] = {
     {LV_COLOR_MAKE(0, 0, 0), LV_COLOR_BLACK},
     {LV_COLOR_MAKE(0, 255, 0), LV_COLOR_LIME},
-    {LV_COLOR_MAKE(0, 0, 255), LV_COLOR_BLUE},
+    {LV_COLOR_MAKE(0, 0, 255)},
     {LV_COLOR_MAKE(255, 0, 0), LV_COLOR_RED},
   };
 
@@ -37,14 +37,14 @@ struct colorPair {
     lv_style_set_text_color(&cellStyles[i], LV_STATE_DEFAULT, colors[i].fg);
     
     // Set padding to adjust cell height
-        lv_style_set_pad_top(&cellStyles[i], LV_STATE_DEFAULT, 1);  // Adjust as needed
-        lv_style_set_pad_bottom(&cellStyles[i], LV_STATE_DEFAULT, -3); // Adjust as needed
+        lv_style_set_pad_top(&cellStyles[i], LV_STATE_DEFAULT, -1);  // Adjust as needed
+        lv_style_set_pad_bottom(&cellStyles[i], LV_STATE_DEFAULT, -6); // Adjust as needed
 
 
     lv_obj_add_style(gridDisplay, LV_TABLE_PART_CELL1 + i, &cellStyles[i]);
   }
     
-    movementTask = lv_task_create(snakeMoveTask, 1000, LV_TASK_PRIO_MID, this); 
+    movementTask = lv_task_create(snakeMoveTask, currentInterval, LV_TASK_PRIO_MID, this);
 
     lv_table_set_col_cnt(gridDisplay, nCols);
     lv_table_set_row_cnt(gridDisplay, nRows);
@@ -57,7 +57,7 @@ struct colorPair {
         lv_table_set_cell_align(gridDisplay, row, col, LV_LABEL_ALIGN_CENTER);
    }
 }
-lv_obj_set_pos(gridDisplay, 4, 6);
+lv_obj_set_pos(gridDisplay, 0, 0);
 
     // Initial placement of snake head
     grid[nRows / 2][nCols / 2].type = SnakeTile::Type::SnakeHead;
@@ -128,17 +128,15 @@ void Snake::moveSnake() {
     }
 
     // Check bounds
-    if (newRow < 0 || newRow >= nRows || newCol < 0 || newCol >= nCols) {
-        // Out of bounds, end game or handle appropriately
-        gameOver();
-        return;
-    }
-
-    // Check for collision with the snake's body
-    for (const auto& segment : snakeBody) {
-        if (segment.first == newRow && segment.second == newCol) {
-            // Collision with itself, end game or handle appropriately
-            //gameOver();
+     // Check bounds and self-collision
+    if (newRow < 0 || newRow >= nRows || newCol < 0 || newCol >= nCols || grid[newRow][newCol].type == SnakeTile::Type::SnakeBody) {
+        if (!inGracePeriod) {
+            inGracePeriod = true;
+            // Start a task to delay the game over
+            gracePeriodTask = lv_task_create(Snake::gracePeriodTimeout, 750, LV_TASK_PRIO_LOW, this);
+            return;
+        } else {
+            gameOver();
             return;
         }
     }
@@ -147,6 +145,9 @@ void Snake::moveSnake() {
     if (grid[newRow][newCol].type == SnakeTile::Type::Food) {
         snakeLength++;
         placeFood(); // Place new food
+            // Decrease the interval, but don't go below a certain threshold (e.g., 200 ms)
+    currentInterval = std::max(200, currentInterval - 5);
+    lv_task_set_period(movementTask, currentInterval);
     }
 
     // Update the grid: Clear the tail segment
@@ -179,6 +180,14 @@ void Snake::gameOver() {
         movementTask = nullptr;
     }
   }
+  
+  void Snake::gracePeriodTimeout(lv_task_t* task) {
+    Snake* snake = static_cast<Snake*>(task->user_data);
+    snake->inGracePeriod = false;
+    snake->moveSnake(); // Attempt to move again
+    lv_task_del(snake->gracePeriodTask); // Clean up the task
+    snake->gracePeriodTask = nullptr;
+}
 
 
 void Snake::placeFood() {

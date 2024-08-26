@@ -29,7 +29,7 @@ extern "C" {
  *      DEFINES
  *********************/
 #ifndef LV_TABLE_COL_MAX
-#define LV_TABLE_COL_MAX 12
+#define LV_TABLE_COL_MAX 64
 #endif
 
 /*

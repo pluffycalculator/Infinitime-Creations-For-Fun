@@ -21,12 +21,14 @@ namespace Pinetime {
         bool OnTouchEvent(TouchEvents event) override;
         void moveSnake(); // Changed from static to non-static
         void gameOver();
+        int currentInterval;
+        static void gracePeriodTimeout(lv_task_t* task);
       private:
        static constexpr int nColors = 4;
         lv_style_t cellStyles[nColors];
         
-        static constexpr int nCols = 11;
-        static constexpr int nRows = 11;
+        static constexpr int nCols = 15;
+        static constexpr int nRows = 15;
         static constexpr int nCells = nCols * nRows;
 
         lv_obj_t* gridDisplay;
@@ -38,6 +40,9 @@ namespace Pinetime {
         size_t snakeLength = 1; // Start length of the snake
         lv_task_t* movementTask; // To handle periodic movement
         bool isGameOver = false; // Flag to track game state
+        bool inGracePeriod = false;
+        lv_task_t* gracePeriodTask = nullptr;
+
 
         void updateGridDisplay();
         void placeFood();
