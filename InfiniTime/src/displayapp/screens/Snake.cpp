@@ -37,8 +37,8 @@ struct colorPair {
     lv_style_set_text_color(&cellStyles[i], LV_STATE_DEFAULT, colors[i].fg);
     
     // Set padding to adjust cell height
-        lv_style_set_pad_top(&cellStyles[i], LV_STATE_DEFAULT, -1);  // Adjust as needed
-        lv_style_set_pad_bottom(&cellStyles[i], LV_STATE_DEFAULT, -6); // Adjust as needed
+        lv_style_set_pad_top(&cellStyles[i], LV_STATE_DEFAULT, -2);  // Adjust as needed
+        lv_style_set_pad_bottom(&cellStyles[i], LV_STATE_DEFAULT, 0); // Adjust as needed
 
 
     lv_obj_add_style(gridDisplay, LV_TABLE_PART_CELL1 + i, &cellStyles[i]);
@@ -57,7 +57,7 @@ struct colorPair {
         lv_table_set_cell_align(gridDisplay, row, col, LV_LABEL_ALIGN_CENTER);
    }
 }
-lv_obj_set_pos(gridDisplay, 0, 0);
+lv_obj_set_pos(gridDisplay, 3, 6);
 
     // Initial placement of snake head
     grid[nRows / 2][nCols / 2].type = SnakeTile::Type::SnakeHead;

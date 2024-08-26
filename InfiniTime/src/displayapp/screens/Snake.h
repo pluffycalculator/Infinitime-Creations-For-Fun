@@ -27,8 +27,8 @@ namespace Pinetime {
        static constexpr int nColors = 4;
         lv_style_t cellStyles[nColors];
         
-        static constexpr int nCols = 15;
-        static constexpr int nRows = 15;
+        static constexpr int nCols = 11;
+        static constexpr int nRows = 11;
         static constexpr int nCells = nCols * nRows;
 
         lv_obj_t* gridDisplay;
