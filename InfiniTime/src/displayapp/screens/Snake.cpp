@@ -1,225 +1,181 @@
-#include "Snake.h"
-#include <lvgl/lvgl.h>
+#include "displayapp/screens/Snake.h"
+
 #include <cstdio>
 #include <cstdlib>
+#include <ctime>
+#include <lvgl/lvgl.h>
 
 using namespace Pinetime::Applications::Screens;
 
-// Free function to wrap the member function
 void snakeMoveTask(lv_task_t* task) {
     Snake* snake = static_cast<Snake*>(task->user_data);
     snake->moveSnake(); // Call the member function
 }
 
-Snake::Snake() : currentInterval(1000) {
-
-struct colorPair {
-    lv_color_t bg;
-    lv_color_t fg;
-  };
-
-  static constexpr colorPair colors[nColors] = {
-    {LV_COLOR_MAKE(0, 0, 0), LV_COLOR_BLACK},
-    {LV_COLOR_MAKE(0, 255, 0), LV_COLOR_LIME},
-    {LV_COLOR_MAKE(0, 0, 255)},
-    {LV_COLOR_MAKE(255, 0, 0), LV_COLOR_RED},
-  };
-
-    gridDisplay = lv_table_create(lv_scr_act(), nullptr);
-    
-    for (size_t i = 0; i < nColors; i++) {
-    lv_style_init(&cellStyles[i]);
-
-    lv_style_set_border_color(&cellStyles[i], LV_STATE_DEFAULT, lv_color_hex(0x000000));
-    lv_style_set_border_width(&cellStyles[i], LV_STATE_DEFAULT, 1);
-    lv_style_set_bg_opa(&cellStyles[i], LV_STATE_DEFAULT, LV_OPA_COVER);
-    lv_style_set_bg_color(&cellStyles[i], LV_STATE_DEFAULT, colors[i].bg);
-    lv_style_set_text_color(&cellStyles[i], LV_STATE_DEFAULT, colors[i].fg);
-    
-    // Set padding to adjust cell height
-        lv_style_set_pad_top(&cellStyles[i], LV_STATE_DEFAULT, -2);  // Adjust as needed
-        lv_style_set_pad_bottom(&cellStyles[i], LV_STATE_DEFAULT, 0); // Adjust as needed
-
-
-    lv_obj_add_style(gridDisplay, LV_TABLE_PART_CELL1 + i, &cellStyles[i]);
+      Snake::Snake() : currentInterval(1000) {
+        srand(static_cast<unsigned int>(time(nullptr)));
+        
+        for (int i = 0; i < 5; ++i) {
+    snakePoints.push_back({125, 125}); // Start at the center (120, 120)
   }
-    
-    movementTask = lv_task_create(snakeMoveTask, currentInterval, LV_TASK_PRIO_MID, this);
-
-    lv_table_set_col_cnt(gridDisplay, nCols);
-    lv_table_set_row_cnt(gridDisplay, nRows);
-
-    for (int col = 0; col < nCols; col++) {
-    lv_table_set_col_width(gridDisplay, col, 240 / nCols);
-    for (int row = 0; row < nRows; row++) {
-        grid[row][col].type = SnakeTile::Type::Empty;
-        lv_table_set_cell_type(gridDisplay, row, col, 1);
-        lv_table_set_cell_align(gridDisplay, row, col, LV_LABEL_ALIGN_CENTER);
-   }
-}
-lv_obj_set_pos(gridDisplay, 3, 6);
-
-    // Initial placement of snake head
-    grid[nRows / 2][nCols / 2].type = SnakeTile::Type::SnakeHead;
-    snakeBody.push_back({nRows / 2, nCols / 2});
-
-
-    // Place initial food
-    placeFood();
-
-    // Render the initial grid
-    updateGridDisplay();
-}
-
-
-Snake::~Snake() {
-    lv_obj_clean(lv_scr_act());
-    lv_task_del(movementTask);
-}
-
-void Snake::updateGridDisplay() {
-    for (int row = 0; row < nRows; row++) {
-        for (int col = 0; col < nCols; col++) {
-            switch (grid[row][col].type) {
-                case SnakeTile::Type::Empty:
-                    lv_table_set_cell_value(gridDisplay, row, col, "");
-                    lv_table_set_cell_type(gridDisplay, row, col, 1);
-                    break;
-                case SnakeTile::Type::SnakeBody:
-                    lv_table_set_cell_value(gridDisplay, row, col, "");
-                    lv_table_set_cell_type(gridDisplay, row, col, 2);
-                    break;
-                case SnakeTile::Type::SnakeHead:
-                    lv_table_set_cell_value(gridDisplay, row, col, "");
-                    lv_table_set_cell_type(gridDisplay, row, col, 3);
-                    break;
-                case SnakeTile::Type::Food:
-                    lv_table_set_cell_value(gridDisplay, row, col, "");
-                    lv_table_set_cell_type(gridDisplay, row, col, 4);
-                    break;
-            }
-        }
-    }
-}
-
-
-
-void Snake::moveSnake() {
-    // Determine the new head position based on lastDirection
-    auto headPos = snakeBody.front();
-    int newRow = headPos.first;
-    int newCol = headPos.second;
-
-    switch (lastDirection) {
-        case Direction::Up:
-            newRow--;
-            break;
-        case Direction::Down:
-            newRow++;
-            break;
-        case Direction::Left:
-            newCol--;
-            break;
-        case Direction::Right:
-            newCol++;
-            break;
-        default:
-            return; // No movement
-    }
-
-    // Check bounds
-     // Check bounds and self-collision
-    if (newRow < 0 || newRow >= nRows || newCol < 0 || newCol >= nCols || grid[newRow][newCol].type == SnakeTile::Type::SnakeBody) {
-        if (!inGracePeriod) {
-            inGracePeriod = true;
-            // Start a task to delay the game over
-            gracePeriodTask = lv_task_create(Snake::gracePeriodTimeout, 750, LV_TASK_PRIO_LOW, this);
-            return;
-        } else {
-            gameOver();
-            return;
-        }
-    }
-
-    // Check for food and adjust the snake length if food is eaten
-    if (grid[newRow][newCol].type == SnakeTile::Type::Food) {
-        snakeLength++;
-        placeFood(); // Place new food
-            // Decrease the interval, but don't go below a certain threshold (e.g., 200 ms)
-    currentInterval = std::max(200, currentInterval - 5);
-    lv_task_set_period(movementTask, currentInterval);
-    }
-
-    // Update the grid: Clear the tail segment
-    if (snakeBody.size() >= snakeLength) {
-        auto tailPos = snakeBody.back();
-        grid[tailPos.first][tailPos.second].type = SnakeTile::Type::Empty;
-        snakeBody.pop_back(); // Remove tail
-    }
-
-    // Update the head position
-    snakeBody.insert(snakeBody.begin(), {newRow, newCol}); // Insert new head
-    grid[newRow][newCol].type = SnakeTile::Type::SnakeHead;
-
-    // Update body segments
-    for (size_t i = 1; i < snakeBody.size(); i++) {
-        auto segment = snakeBody[i];
-        grid[segment.first][segment.second].type = SnakeTile::Type::SnakeBody;
-    }
-
-    // Render the updated grid
-    updateGridDisplay();
-}
-
-void Snake::gameOver() {
-    isGameOver = true; // Set the game over flag
-
-    // Delete or stop the movement task
-    if (movementTask) {
-        lv_task_del(movementTask);
-        movementTask = nullptr;
-    }
-  }
+      
+      lv_style_init(&snakeStyle);
+  // Set snakeStyle properties
+        lv_style_set_line_width(&snakeStyle, LV_STATE_DEFAULT, 8);  // Set line width
+        lv_style_set_line_color(&snakeStyle, LV_STATE_DEFAULT, LV_COLOR_LIME);  // Set line color
+        lv_style_set_line_rounded(&snakeStyle, LV_STATE_DEFAULT, true);
+        
+       //static lv_point_t line_points[] = {{0, 0}, {10, 0}}; //size of initial snake     
   
-  void Snake::gracePeriodTimeout(lv_task_t* task) {
-    Snake* snake = static_cast<Snake*>(task->user_data);
-    snake->inGracePeriod = false;
-    snake->moveSnake(); // Attempt to move again
-    lv_task_del(snake->gracePeriodTask); // Clean up the task
-    snake->gracePeriodTask = nullptr;
+       line = lv_line_create(lv_scr_act(), nullptr); //create snake
+       lv_line_set_points(line, snakePoints.data(), snakePoints.size());
+       lv_obj_add_style(line, LV_LINE_PART_MAIN, &snakeStyle);
+      lv_obj_set_pos(line, 0, 0); //set snake position
+      
+      // Initialize the food style
+  lv_style_init(&foodStyle);
+  lv_style_set_bg_color(&foodStyle, LV_STATE_DEFAULT, LV_COLOR_RED);  // Set food color
+  lv_style_set_radius(&foodStyle, LV_STATE_DEFAULT, 5);  // Set the radius for the circle
+
+      
+  // Create a new object for the food (as a circle)
+  food = lv_obj_create(lv_scr_act(), nullptr);
+  lv_obj_add_style(food, LV_OBJ_PART_MAIN, &foodStyle);
+  lv_obj_set_size(food, 10, 10);  // Set the size of the food (diameter of 10 pixels)
+  
+  movementTask = lv_task_create(snakeMoveTask, currentInterval, LV_TASK_PRIO_MID, this);
+  
+  teleportFood();
+      }
+
+
+     Snake::~Snake() {
+  lv_obj_clean(lv_scr_act());
+  lv_style_reset(&snakeStyle);
+  lv_style_reset(&foodStyle);
 }
-
-
-void Snake::placeFood() {
-    int row, col;
-    do {
-        row = rand() % nRows;
-        col = rand() % nCols;
-    } while (grid[row][col].type != SnakeTile::Type::Empty); // Find an empty cell
-
-    grid[row][col].type = SnakeTile::Type::Food; // Place food
-}
-
 
 bool Snake::OnTouchEvent(TouchEvents event) {
-    if (isGameOver) return false; // Ignore input if the game is over
-    switch (event) {
-        case TouchEvents::SwipeUp:
-            lastDirection = Direction::Up;
-            break;
-        case TouchEvents::SwipeDown:
-            lastDirection = Direction::Down;
-            break;
-        case TouchEvents::SwipeLeft:
-            lastDirection = Direction::Left;
-            break;
-        case TouchEvents::SwipeRight:
-            lastDirection = Direction::Right;
-            break;
-        default:
-            return false;
+if (isGameOver) {
+        return false; // Ignore touch events when the game is over
     }
-    updateGridDisplay();
-    return true;
+  // Check if the touch event is a swipe or tap for direction change
+  if (event == TouchEvents::SwipeUp) {
+    lastDirection = Direction::Up;
+  } else if (event == TouchEvents::SwipeDown) {
+    lastDirection = Direction::Down;
+  } else if (event == TouchEvents::SwipeLeft) {
+    lastDirection = Direction::Left;
+  } else if (event == TouchEvents::SwipeRight) {
+    lastDirection = Direction::Right;
+  }
+
+  // Move the snake in the last direction
+  return true; // Indicate that the event was handled
+}
+
+void Snake::moveSnake() {
+  // Get the position of the head (first segment)
+  lv_coord_t headX = snakePoints.front().x;
+    lv_coord_t headY = snakePoints.front().y;
+  // Calculate new head position based on the last direction
+ 
+    switch (lastDirection) {
+        case Direction::Up:
+            headY -= 10; // Move up
+            break;
+        case Direction::Down:
+            headY += 10; // Move down
+            break;
+        case Direction::Left:
+            headX -= 10; // Move left
+            break;
+        case Direction::Right:
+            headX += 10; // Move right
+            break;
+    }
+
+    // Check for wall collisions
+    if (headX < 0 || headX >= 240 || headY < 0 || headY >= 240) {
+        endGame(); // End the game if the snake hits a wall
+        return; // Exit the function
+    }
+
+    // Check for body collisions
+    for (size_t i = 1; i < snakePoints.size(); ++i) {
+        if (snakePoints[i].x == headX && snakePoints[i].y == headY) {
+            endGame(); // End the game if the snake collides with its body
+            return; // Exit the function
+        }
+    }
+ // Check for collision with food
+  if (checkCollision(headX, headY)) {
+    // Add a new segment at the new head position
+    addSegment(headX, headY);
+    currentInterval = std::max(200, currentInterval - 5);
+    lv_task_set_period(movementTask, currentInterval);
+    teleportFood(); // Teleport the food to a new position
+  } else {
+    // Normal movement without eating food
+    addSegment(headX, headY);
+    removeSegment(); // Remove the last segment
+  }
+}
+
+void Snake::addSegment(int x, int y) {
+  // Insert new head position
+  snakePoints.insert(snakePoints.begin(), {static_cast<lv_coord_t>(x), static_cast<lv_coord_t>(y)});
+
+  // Update the line points
+  lv_line_set_points(line, snakePoints.data(), snakePoints.size()); // Update the line with new points
+}
+
+void Snake::removeSegment() {
+  if (snakePoints.size() > 1) { // Keep at least one segment
+    snakePoints.pop_back(); // Remove the last segment
+    lv_line_set_points(line, snakePoints.data(), snakePoints.size()); // Update the line with the new points
+  }
+}
+
+void Snake::teleportFood() {
+    int foodX, foodY;
+    bool collision;
+
+    do {
+        // Randomize food position within the grid
+        foodX = (rand() % 24) * 10; 
+        foodY = (rand() % 24) * 10; 
+
+        // Check for collision with the snake, considering the 5-pixel offset
+        collision = false;
+        for (const auto& segment : snakePoints) {
+            if (segment.x == foodX && segment.y == foodY) {
+                collision = true; // Food overlaps with a snake segment
+                break; // No need to check further
+            }
+            // Check against the position where the snake segment would visually overlap the food
+            if (segment.x - 5 == foodX && segment.y - 5 == foodY) {
+                collision = true; // Food overlaps with a snake segment accounting for the offset
+                break; // No need to check further
+            }
+        }
+    } while (collision); // Repeat until we find a valid position
+
+    // Set the randomized position of the food
+    lv_obj_set_pos(food, foodX, foodY);  
+}
+
+
+bool Snake::checkCollision(int headX, int headY) {
+  lv_coord_t foodX = lv_obj_get_x(food);
+  lv_coord_t foodY = lv_obj_get_y(food);
+
+  // Check if the snake's head is at the same position as the food
+  return (headX - 5 == foodX && headY - 5 == foodY);
+}
+void Snake::endGame() {
+  lv_style_set_line_color(&snakeStyle, LV_STATE_DEFAULT, LV_COLOR_GREEN);  // Set line color
+  lv_obj_add_style(line, LV_LINE_PART_MAIN, &snakeStyle);
+    isGameOver = true; // Add a member variable to track game state
 }
 
