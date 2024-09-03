@@ -50,9 +50,11 @@ void snakeMoveTask(lv_task_t* task) {
 
 
      Snake::~Snake() {
+  lv_task_del(movementTask);
   lv_obj_clean(lv_scr_act());
   lv_style_reset(&snakeStyle);
   lv_style_reset(&foodStyle);
+  
 }
 
 bool Snake::OnTouchEvent(TouchEvents event) {
