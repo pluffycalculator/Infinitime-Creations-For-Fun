@@ -70,6 +70,7 @@ namespace Pinetime {
         static constexpr const char* grid = "\xEF\x80\x8A";
         static constexpr const char* grid2 = "\xEF\x80\x95";
         static constexpr const char* one = "\xEE\x8F\x90";
+        static constexpr const char* snek = "\xEF\x9C\x96";
         
       }
     }
